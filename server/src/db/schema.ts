@@ -43,5 +43,9 @@ export function initializeSchema(db: Database.Database): void {
       confidence REAL,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     );
+
+    CREATE INDEX IF NOT EXISTS idx_sessions_player ON sessions(player_id);
+    CREATE INDEX IF NOT EXISTS idx_sessions_timestamp ON sessions(timestamp);
+    CREATE INDEX IF NOT EXISTS idx_recs_player ON recommendations(player_id);
   `);
 }
