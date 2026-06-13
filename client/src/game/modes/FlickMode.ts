@@ -33,7 +33,8 @@ export class FlickMode extends BaseMode {
 
     const hit = this.targetManager.checkHit(x, y);
     if (hit) {
-      this.targetSpawned = false;
+      // NOTE: do NOT reset targetSpawned here — update() needs it true to
+      // detect the now-empty arena and schedule the next spawn.
       this.handleHit(hit, x, y);
     } else {
       const nearest = this.findNearestTarget(x, y);

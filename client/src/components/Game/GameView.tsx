@@ -70,6 +70,10 @@ export const GameView: React.FC = () => {
 
     const engine = initEngine(canvas);
     engine.setWeaknesses(weaknesses);
+    // Dev-only hook for automated/E2E testing; stripped from production builds.
+    if (import.meta.env.DEV) {
+      (window as unknown as { __aimEngine?: unknown }).__aimEngine = engine;
+    }
 
     engine.on('stateChange', (newState: unknown) => {
       useGameStore.getState().setState(newState as never);

@@ -156,57 +156,76 @@ export class TargetManager {
   }
 
   private drawTarget(ctx: CanvasRenderingContext2D, target: Target, scale: number, alpha: number): void {
+    const t = performance.now() / 1000;
+    const pulse = 1 + Math.sin(t * 4 + target.x * 0.05) * 0.04;
     ctx.save();
     ctx.globalAlpha = alpha;
     ctx.translate(target.x, target.y);
-    ctx.scale(scale, scale);
+    ctx.scale(scale * pulse, scale * pulse);
 
     const r = target.radius;
     const color = target.color;
 
-    // Outer ring
+    // Soft radial body glow
+    const glow = ctx.createRadialGradient(0, 0, 0, 0, 0, r * 1.1);
+    glow.addColorStop(0, this.hexToRgba(color, 0.35));
+    glow.addColorStop(0.7, this.hexToRgba(color, 0.12));
+    glow.addColorStop(1, this.hexToRgba(color, 0));
+    ctx.fillStyle = glow;
     ctx.beginPath();
-    ctx.arc(0, 0, r, 0, Math.PI * 2);
+    ctx.arc(0, 0, r * 1.1, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Rotating segmented outer ring (enemy-marker look)
+    const rot = t * 0.8 + target.x * 0.01;
     ctx.strokeStyle = color;
-    ctx.lineWidth = 1.5;
-    ctx.shadowBlur = 15;
+    ctx.lineWidth = 2.5;
+    ctx.shadowBlur = 16;
     ctx.shadowColor = color;
+    const segs = 4;
+    for (let i = 0; i < segs; i++) {
+      const a0 = rot + (i * Math.PI * 2) / segs;
+      const a1 = a0 + Math.PI / segs;
+      ctx.beginPath();
+      ctx.arc(0, 0, r, a0, a1);
+      ctx.stroke();
+    }
+
+    // Solid inner ring
+    ctx.beginPath();
+    ctx.arc(0, 0, r * 0.72, 0, Math.PI * 2);
+    ctx.lineWidth = 1.5;
+    ctx.shadowBlur = 8;
     ctx.stroke();
 
-    // Inner fill (semi-transparent)
+    // Inner fill
     ctx.beginPath();
-    ctx.arc(0, 0, r * 0.85, 0, Math.PI * 2);
-    const fillColor = this.hexToRgba(color, 0.15);
-    ctx.fillStyle = fillColor;
+    ctx.arc(0, 0, r * 0.72, 0, Math.PI * 2);
+    ctx.fillStyle = this.hexToRgba(color, 0.18);
+    ctx.shadowBlur = 0;
     ctx.fill();
 
-    // Middle ring
-    ctx.beginPath();
-    ctx.arc(0, 0, r * 0.5, 0, Math.PI * 2);
-    ctx.strokeStyle = color;
-    ctx.lineWidth = 1;
-    ctx.globalAlpha = alpha * 0.6;
-    ctx.stroke();
+    // Counter-rotating tick marks
+    ctx.save();
+    ctx.rotate(-rot * 1.6);
+    ctx.strokeStyle = this.hexToRgba(color, 0.7);
+    ctx.lineWidth = 1.5;
+    for (let i = 0; i < 4; i++) {
+      const a = (i * Math.PI) / 2;
+      ctx.beginPath();
+      ctx.moveTo(Math.cos(a) * r * 0.45, Math.sin(a) * r * 0.45);
+      ctx.lineTo(Math.cos(a) * r * 0.6, Math.sin(a) * r * 0.6);
+      ctx.stroke();
+    }
+    ctx.restore();
 
-    // Center dot
-    ctx.globalAlpha = alpha;
+    // Center dot (bullseye)
     ctx.beginPath();
-    ctx.arc(0, 0, 3, 0, Math.PI * 2);
+    ctx.arc(0, 0, Math.max(2, r * 0.12), 0, Math.PI * 2);
     ctx.fillStyle = '#ffffff';
-    ctx.shadowBlur = 0;
+    ctx.shadowBlur = 6;
+    ctx.shadowColor = '#ffffff';
     ctx.fill();
-
-    // Cross-hair lines
-    ctx.strokeStyle = 'rgba(255,255,255,0.6)';
-    ctx.lineWidth = 1;
-    ctx.shadowBlur = 0;
-    const crossSize = r * 0.3;
-    ctx.beginPath();
-    ctx.moveTo(-crossSize, 0);
-    ctx.lineTo(crossSize, 0);
-    ctx.moveTo(0, -crossSize);
-    ctx.lineTo(0, crossSize);
-    ctx.stroke();
 
     ctx.restore();
   }
